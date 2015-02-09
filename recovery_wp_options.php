@@ -43,6 +43,7 @@ function get_table_options() {
 		return;
 	}
 	echo "Total field founds: $total<br>";
+	
 	$fields = $wpdb->get_results( $wpdb->prepare( 'Select option_id,option_value from ' . $wpdb->options . ' where CHAR_LENGTH(option_value) > %d ', 8), ARRAY_A );
 	
 	foreach($fields as $field) {
@@ -72,6 +73,41 @@ function get_table_options() {
 				
 			} else {
 				$html .= "<span style='color:#999'>Option_id {$field['option_id']} no need recovered!</span><br/>";
+			}
+			
+		 }
+	}
+
+	$html .= "<span style='color:orange'>Posts Meta Table recover</span><br/>";
+	$fields = $wpdb->get_results( $wpdb->prepare( 'Select meta_key, meta_value from ' . $wpdb->postmeta . ' where CHAR_LENGTH(option_value) > %d ', 8), ARRAY_A );
+	
+	foreach($fields as $field) {
+		if(is_serialized($field['meta_value'])) {
+			if(!is_serial_ok($field['meta_value'])) {
+				$data_recovered = recovery($field['meta_value']);
+				$serial++;
+				if($wpdb->update(
+						$wpdb->postmeta,
+						array(
+								'meta_value' => $data_recovered,	// stringa
+						),
+						array( 'meta_key' => $field['meta_key'] ),
+						array(
+								'%s'	// valore1
+						),
+						array( '%d' )
+				)) 
+				{
+					$html .= "<span style='color:green'>Option_id {$field['meta_key']} recovered!</span><br/>";
+					$count++;
+				}
+				else {
+					$html .= "<span style='color:red'>Option_id {$field['meta_key']} fail recovered!</span><br/>";
+					$fail++;
+				}
+				
+			} else {
+				$html .= "<span style='color:#999'>Option_id {$field['meta_key']} no need recovered!</span><br/>";
 			}
 			
 		 }
